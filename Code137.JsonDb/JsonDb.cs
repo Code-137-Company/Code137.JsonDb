@@ -1,5 +1,6 @@
 ﻿using Code137.JsonDb.Attributes;
 using Code137.JsonDb.Models;
+using Code137.JsonDb.Security;
 using Newtonsoft.Json;
 
 namespace Code137.JsonDb
@@ -7,6 +8,9 @@ namespace Code137.JsonDb
     public class JsonDb
     {
         public DatabaseOptions Options { get; private set; }
+
+        private readonly Cryptograph _cryptograph;
+        private List<Type> enabledTypes = new List<Type>();
 
         public JsonDb(DatabaseOptions options = default)
         {
@@ -17,6 +21,8 @@ namespace Code137.JsonDb
 
             if (!Path.Exists(Options.FilesPath))
                 Directory.CreateDirectory(Options.FilesPath);
+
+            _cryptograph = string.IsNullOrEmpty(Options.Password) ? default : new Cryptograph(Options.Password);
         }
 
         #region Internal Methods
@@ -43,7 +49,7 @@ namespace Code137.JsonDb
 
             string entityFile = Path.Combine(Options.FilesPath, $"{entityName}.jsondb");
 
-            if (!File.Exists(entityFile))
+            if (!enabledTypes.Any(x => x == typeof(T)) || !File.Exists(entityFile))
             {
                 message = $"The {entityName} class is not defined with the JsonDb entity. Use <JsonDb>.AddEntity<Entity>().";
 
@@ -77,21 +83,52 @@ namespace Code137.JsonDb
 
             if (!File.Exists(entityFile))
                 File.Create(entityFile).Close();
+
+            enabledTypes.Add(typeof(T));
         }
+
+        #region JsonDb Read/Write
+        private IEnumerable<T> ReadJsonDb<T>(string entityFile)
+        {
+            try
+            {
+                var content = File.ReadAllText(entityFile);
+
+                if (_cryptograph != default)
+                    content = _cryptograph.Decrypt(content);
+
+                return JsonConvert.DeserializeObject<IEnumerable<T>>(content) ?? new List<T>();
+            }
+            catch
+            {
+                throw new Exception("Unable to read entity data.");
+            }
+        }
+
+        private void WriteJsonDb<T>(string entityFile, IEnumerable<T> entities)
+        {
+            try
+            {
+                var content = JsonConvert.SerializeObject(entities);
+
+                if (_cryptograph != default)
+                    content = _cryptograph.Encrypt(content);
+
+                File.WriteAllText(entityFile, content);
+            }
+            catch
+            {
+                throw new Exception("Unable to write entity data.");
+            }
+        }
+        #endregion
 
         #region Read
-        private IEnumerable<T> GetContentFile<T>(string entityFile)
-        {
-            var jsonContent = File.ReadAllText(entityFile);
-
-            return JsonConvert.DeserializeObject<IEnumerable<T>>(jsonContent) ?? new List<T>();
-        }
-
         public IEnumerable<T> GetAll<T>() where T : AbstractEntity
         {
             string entityFile = StartEntityFile<T>();
 
-            var entities = GetContentFile<T>(entityFile);
+            var entities = ReadJsonDb<T>(entityFile);
 
             return entities;
         }
@@ -100,7 +137,7 @@ namespace Code137.JsonDb
         {
             string entityFile = StartEntityFile<T>();
 
-            var entities = GetContentFile<T>(entityFile);
+            var entities = ReadJsonDb<T>(entityFile);
 
             var result = entities.Where(func);
 
@@ -111,7 +148,7 @@ namespace Code137.JsonDb
         {
             string entityFile = StartEntityFile<T>();
 
-            var entities = GetContentFile<T>(entityFile);
+            var entities = ReadJsonDb<T>(entityFile);
 
             var entity = entities.FirstOrDefault(func);
 
@@ -122,7 +159,7 @@ namespace Code137.JsonDb
         {
             string entityFile = StartEntityFile<T>();
 
-            var entities = GetContentFile<T>(entityFile);
+            var entities = ReadJsonDb<T>(entityFile);
 
             var entity = entities.FirstOrDefault(x => x.Id == id);
 
@@ -131,11 +168,6 @@ namespace Code137.JsonDb
         #endregion
 
         #region Create
-        private void WriteJsonDb<T>(string entityFile, IEnumerable<T> entities)
-        {
-            File.WriteAllText(entityFile, JsonConvert.SerializeObject(entities));
-        }
-
         public bool Insert<T>(T entity, out string message) where T : AbstractEntity
         {
             message = string.Empty;

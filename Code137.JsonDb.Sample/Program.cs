@@ -11,6 +11,8 @@ public class Program
         jsonDb.AddEntity<User>();
         jsonDb.AddEntity<Licence>();
 
+        var users = jsonDb.GetAll<User>();
+
         var user = new User()
         {
             Name = "Guilherme",
@@ -33,7 +35,7 @@ public class Program
 
         jsonDb.Insert(user, out messageInsert);
 
-        var users = jsonDb.GetAll<User>();
+        users = jsonDb.GetAll<User>();
 
         user.Age = 24;
         jsonDb.Update(user, out string messageUpdate);

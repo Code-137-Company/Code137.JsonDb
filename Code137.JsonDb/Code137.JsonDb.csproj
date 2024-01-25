@@ -4,6 +4,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	<Version>1.0.0</Version>
+    <Authors>Guilherme Marques</Authors>
+    <Company>Code 137</Company>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <RepositoryUrl>https://github.com/Code-137-Company/Code137.JsonDb</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

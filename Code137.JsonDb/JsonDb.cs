@@ -205,6 +205,9 @@ namespace Code137.JsonDb
                 }
             }
 
+            if (entity.Id == default)
+                entity.Id = Guid.NewGuid();
+
             entities.Add(entity);
 
             WriteJsonDb(entityFile, entities);

@@ -274,7 +274,7 @@ namespace Code137.JsonDb
 
             var entities = GetAll<T>().ToList();
 
-            var entity = entities.FirstOrDefault();
+            var entity = entities.FirstOrDefault(x => x.Id == id);
 
             if (entity == default)
             {

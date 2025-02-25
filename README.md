@@ -13,10 +13,10 @@
 
 **Command Line**
 * Access the Package Manager Console
-* Type the command ```Install-Package Code137.JsonDb -Version 1.0.1```
+* Type the command ```Install-Package Code137.JsonDb -Version 1.0.2```
 
 **.NET CLI**
-* Type the command ```dotnet add package Code137.JsonDb --version 1.0.1```
+* Type the command ```dotnet add package Code137.JsonDb --version 1.0.2```
 
 **NuGet ORG**
 * [Nuget](https://www.nuget.org/packages/Code137.JsonDb/1.0.1)
